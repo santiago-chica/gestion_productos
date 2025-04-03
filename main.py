@@ -1,15 +1,18 @@
 from fastapi import FastAPI, Body
 from contextlib import asynccontextmanager
-from database import Product, UpdatedProduct, init
+from database import Product, UpdatedProduct, SearchCriteria
+from Levenshtein import distance
+from database import init as start_database
 from datetime import datetime
 from uuid import UUID
 
+MAX_LEVENSHTEIN_DISTANCE: int = 10
 ENDPOINT_NAME: str = "products"
 
 # Inicialización
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init()
+    await start_database()
     yield
 
 app:FastAPI = FastAPI(lifespan=lifespan)
@@ -17,18 +20,49 @@ app:FastAPI = FastAPI(lifespan=lifespan)
 # Creación del producto
 @app.post(f"/{ENDPOINT_NAME}")
 async def create_product(product: Product):
+    if product.stock < 0:
+        return {"success": False, "message": "El stock no puede ser negativo"}
+    if product.price < 0:
+        return {"success": False, "message": "El precio no puede ser negativo"}
+
     await product.insert()
 
     return product.model_dump()
 
 # Obtener todos los productos con paginación y filtro de búsqueda por nombre o categoría.
 @app.get(f"/{ENDPOINT_NAME}")
-async def obtain_product():
-    return {"Hello world!!": True}
+async def obtain_product(
+    search: str = None,
+    category:str = None,
+    min_price:float = 0.0,
+    max_price:float = 500.0,
+    min_stock:int = 0,
+    max_stock:int = 500,
+    skip:int = 0,
+    limit:int = 10):
+
+    conditions = [
+        min_price <= Product.price <= max_price,
+        min_stock <= Product.stock <= max_stock
+    ]
+
+    if search != None:
+        conditions.append(Product.name == search)
+    if category != None:
+        conditions.append(Product.category == category)
+
+
+    product_list = await Product.find(
+        *conditions,
+        skip=skip,
+        limit=limit
+    ).to_list()
+
+    return product_list
 
 # Obtener producto por id
 @app.get(f"/{ENDPOINT_NAME}/{{item_id}}")
-async def obtain_product(item_id: str):
+async def obtain_product_id(item_id: str):
     uuid: UUID
 
     try:
@@ -47,6 +81,11 @@ async def obtain_product(item_id: str):
 # Actualizar producto
 @app.put(f"/{ENDPOINT_NAME}/{{item_id}}")
 async def update_product(item_id: str, updated_product: UpdatedProduct):
+    if updated_product.stock < 0:
+        return {"success": False, "message": "El stock no puede ser negativo"}
+    if updated_product.price < 0:
+        return {"success": False, "message": "El precio no puede ser negativo"}
+
     uuid: UUID
 
     try:

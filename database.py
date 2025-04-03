@@ -24,6 +24,14 @@ class UpdatedProduct(BaseModel):
     category: Optional[str] = Field(default=None)
     stock: Optional[int] = Field(default=None)
 
+class SearchCriteria(BaseModel):
+    search: Optional[str] = Field(default=None)
+    category: Optional[str] = Field(default=None)
+    min_price: Optional[float] = Field(default=0.0)
+    max_price: Optional[float] = Field(default=1000.0)
+    min_stock: Optional[int] = Field(default=0)
+    max_stock: Optional[int] = Field(default=500)
+
 def get_environment() -> None:
     env: str = getenv(DB_ENVIRONMENT_VAR)
 
