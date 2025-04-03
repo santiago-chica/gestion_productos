@@ -1,22 +1,25 @@
-from pydantic import BaseModel
 from fastapi import FastAPI
-from uuid import uuid4, UUID
-from datetime import datetime
-from datetime import datetime
 
-app = FastAPI()
+ENDPOINT_NAME: str = "products"
 
-class Product(BaseModel):
-    id: UUID
-    name: str
-    description: str
-    price: float
-    category: str
-    stock: int
-    created_at: datetime
-    updated_at: datetime
+app:FastAPI = FastAPI()
 
 # Creación del producto
-@app.get("/")
-def test():
+@app.post(f"/{ENDPOINT_NAME}/")
+def create_product():
+    return {"Hello world!!": True}
+
+# Obtener todos los productos con paginación y filtro de búsqueda por nombre o categoría.
+@app.get(f"/{ENDPOINT_NAME}/")
+def obtain_product():
+    return {"Hello world!!": True}
+
+# Actualizar producto
+@app.put(f"/{ENDPOINT_NAME}/")
+def update_product():
+    return {"Hello world!!": True}
+
+# Eliminar producto
+@app.delete(f"/{ENDPOINT_NAME}/")
+def delete_product():
     return {"Hello world!!": True}
