@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from database import Product, UpdatedProduct, SearchCriteria
-from Levenshtein import distance
+from database import Product, UpdatedProduct
 from database import init as start_database
 from datetime import datetime
 from uuid import UUID
@@ -15,7 +14,7 @@ async def lifespan(app: FastAPI):
     await start_database()
     yield
 
-app:FastAPI = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan)
 
 # Creación del producto
 @app.post(f"/{ENDPOINT_NAME}")
@@ -33,7 +32,7 @@ async def create_product(product: Product):
 @app.get(f"/{ENDPOINT_NAME}")
 async def obtain_product(
     search: str = None,
-    category:str = None,
+    category: str = None,
     min_price:float = 0.0,
     max_price:float = 500.0,
     min_stock:int = 0,
@@ -50,13 +49,16 @@ async def obtain_product(
         conditions.append(Product.name == search)
     if category != None:
         conditions.append(Product.category == category)
-
+    
 
     product_list = await Product.find(
         *conditions,
         skip=skip,
         limit=limit
     ).to_list()
+
+    if len(product_list) == 0:
+        return {'success': False, "message": "Sin datos acordes al criterio de búsqueda"}
 
     return product_list
 
@@ -81,9 +83,9 @@ async def obtain_product_id(item_id: str):
 # Actualizar producto
 @app.put(f"/{ENDPOINT_NAME}/{{item_id}}")
 async def update_product(item_id: str, updated_product: UpdatedProduct):
-    if updated_product.stock < 0:
+    if updated_product.stock != None and updated_product.stock < 0:
         return {"success": False, "message": "El stock no puede ser negativo"}
-    if updated_product.price < 0:
+    if updated_product.price != None and updated_product.price < 0:
         return {"success": False, "message": "El precio no puede ser negativo"}
 
     uuid: UUID
