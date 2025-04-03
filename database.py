@@ -4,7 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from uuid import uuid4, UUID
 from datetime import datetime
 from os import getenv
-from pydantic import Field
+from pydantic import Field, BaseModel
 DB_ENVIRONMENT_VAR = 'MONGO_URI'
 
 class Product(Document):
@@ -14,8 +14,15 @@ class Product(Document):
     price: float
     category: Optional[str] = None
     stock: Optional[int] = 0
-    #created_at: datetime
-    #updated_at: datetime
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+class UpdatedProduct(BaseModel):
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    price: Optional[float] = Field(default=None)
+    category: Optional[str] = Field(default=None)
+    stock: Optional[int] = Field(default=None)
 
 def get_environment() -> None:
     env: str = getenv(DB_ENVIRONMENT_VAR)
